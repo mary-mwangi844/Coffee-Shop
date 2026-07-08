@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingRoot: '/home/maryann/Downloads/mayas-coffee-shop'
+  // Remove absolute path for Netlify compatibility
 }
 
 module.exports = nextConfig
