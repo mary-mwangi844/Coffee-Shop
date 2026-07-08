@@ -21,7 +21,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, itemName, pri
   }
 
   const handlePaymentSelect = (method: string) => {
-    let paymentDetails = { method }
+    let paymentDetails: any = { method }
     
     if (method === 'mpesa') {
       const phone = prompt('Enter M-Pesa phone number:')
