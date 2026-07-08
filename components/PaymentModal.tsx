@@ -9,6 +9,13 @@ interface PaymentModalProps {
   price: string
 }
 
+interface PaymentDetails {
+  method: string
+  phone?: string
+  cardNumber?: string
+  accountNumber?: string
+}
+
 export default function PaymentModal({ isOpen, onClose, onConfirm, itemName, price }: PaymentModalProps) {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
   const [orderDetails, setOrderDetails] = useState<any>(null)
@@ -21,7 +28,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, itemName, pri
   }
 
   const handlePaymentSelect = (method: string) => {
-    let paymentDetails: any = { method }
+    const paymentDetails: PaymentDetails = { method }
     
     if (method === 'mpesa') {
       const phone = prompt('Enter M-Pesa phone number:')
