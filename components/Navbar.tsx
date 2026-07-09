@@ -13,6 +13,7 @@ export default function Navbar() {
         <li><Link href="/coffee">Coffee</Link></li>
         <li><Link href="/equipment">Equipment</Link></li>
         <li><Link href="/gifts">Gifts</Link></li>
+        <li><Link href="/order">Order</Link></li>
         <li><Link href="/contacts">Contacts</Link></li>
       </ul>
     </nav>
