@@ -26,7 +26,7 @@ Order placed on: ${new Date().toLocaleString()}
 
     const { data, error } = await resend.emails.send({
       from: 'onboarding@resend.dev',
-      to: ['Akellovictor@gmail.com'],
+      to: ['mayamwangi2004@gmail.com'],
       subject: `New Order from ${name} - ${coffeeType}`,
       replyTo: email,
       text: emailText,
