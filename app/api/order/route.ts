@@ -88,7 +88,10 @@ Maya's Coffee Shop Team
     });
 
     if (adminResult.error) {
-      return Response.json({ error: adminResult.error.message }, { status: 500 });
+      return Response.json({ 
+        error: 'Failed to send admin notification',
+        details: adminResult.error.message 
+      }, { status: 500 });
     }
 
     // Send customer confirmation
@@ -100,8 +103,10 @@ Maya's Coffee Shop Team
     });
 
     if (customerResult.error) {
-      // Log error but don't fail the entire order if customer email fails
-      console.error('Failed to send customer confirmation email:', customerResult.error);
+      return Response.json({ 
+        error: 'Failed to send customer confirmation email',
+        details: customerResult.error.message 
+      }, { status: 500 });
     }
 
     return Response.json({ 
