@@ -1127,6 +1127,21 @@ footer .logo-text {
   font-weight: 600;
 }
 
+.order-confirmation {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #2e7d32;
+}
+
+.order-confirmation p {
+  margin: 8px 0;
+  font-size: 0.95rem;
+}
+
+.order-confirmation strong {
+  color: #1b5e20;
+}
+
 .order-error {
   background: #ffebee;
   border: 2px solid #c62828;

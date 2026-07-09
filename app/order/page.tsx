@@ -3,16 +3,16 @@
 import { useState } from 'react'
 
 const coffeeTypes = [
-  'Espresso',
-  'Americano',
-  'Cappuccino',
-  'Latte',
-  'Mocha',
-  'Macchiato',
-  'Flat White',
-  'Cold Brew',
-  'Iced Coffee',
-  'Affogato'
+  { name: 'Espresso', price: 200 },
+  { name: 'Americano', price: 250 },
+  { name: 'Cappuccino', price: 300 },
+  { name: 'Latte', price: 350 },
+  { name: 'Mocha', price: 400 },
+  { name: 'Macchiato', price: 320 },
+  { name: 'Flat White', price: 380 },
+  { name: 'Cold Brew', price: 280 },
+  { name: 'Iced Coffee', price: 260 },
+  { name: 'Affogato', price: 450 }
 ]
 
 export default function OrderPage() {
@@ -26,6 +26,7 @@ export default function OrderPage() {
     address: ''
   })
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [orderDetails, setOrderDetails] = useState<{ orderNumber: string; totalPrice: number } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,8 +41,11 @@ export default function OrderPage() {
         body: JSON.stringify(formData),
       })
 
+      const result = await response.json()
+
       if (response.ok) {
         setSubmitStatus('success')
+        setOrderDetails({ orderNumber: result.orderNumber, totalPrice: result.totalPrice })
         setFormData({
           name: '',
           email: '',
@@ -51,7 +55,10 @@ export default function OrderPage() {
           deliveryOption: 'pickup',
           address: ''
         })
-        setTimeout(() => setSubmitStatus('idle'), 5000)
+        setTimeout(() => {
+          setSubmitStatus('idle')
+          setOrderDetails(null)
+        }, 10000)
       } else {
         setSubmitStatus('error')
         setTimeout(() => setSubmitStatus('idle'), 5000)
@@ -115,8 +122,8 @@ export default function OrderPage() {
             >
               <option value="">Select a coffee type</option>
               {coffeeTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
+                <option key={type.name} value={type.name}>
+                  {type.name} - KES {type.price}
                 </option>
               ))}
             </select>
@@ -180,7 +187,14 @@ export default function OrderPage() {
 
           {submitStatus === 'success' && (
             <div className="order-success">
-              <p>Order placed successfully! We'll contact you shortly.</p>
+              <p>Order placed successfully!</p>
+              {orderDetails && (
+                <div className="order-confirmation">
+                  <p><strong>Order Number:</strong> {orderDetails.orderNumber}</p>
+                  <p><strong>Total Price:</strong> KES {orderDetails.totalPrice}</p>
+                  <p>A confirmation email has been sent to your email address.</p>
+                </div>
+              )}
             </div>
           )}
 
