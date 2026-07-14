@@ -15,6 +15,12 @@ const contactItems = [
     value: 'mayamwangi2004@gmail.com',
     image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=200&h=200&fit=crop',
     alt: 'Email'
+  },
+  {
+    type: 'Location',
+    value: 'Westlands',
+    image: 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=200&h=200&fit=crop',
+    alt: 'Location'
   }
 ]
 
