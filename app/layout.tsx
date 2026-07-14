@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import FilmGrain from '@/components/FilmGrain'
 import './globals.css'
+import './maya.css'
 
 export const metadata: Metadata = {
-  title: "MAYA'S COFFEE SHOP",
-  description: 'Where every cup tells a story. Experience the finest blends crafted with passion, precision, and the perfect roast.',
+  title: "Maya's Coffee Shop",
+  description:
+    'Where every cup tells a story. Specialty blends crafted with passion in Westlands, Nairobi.',
 }
 
 export default function RootLayout({
@@ -16,11 +19,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,600;6..96,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
+        <FilmGrain />
         <Navbar />
-        {children}
+        <main className="site-main">{children}</main>
         <Footer />
       </body>
     </html>

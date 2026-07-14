@@ -1,10 +1,29 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function MenuPage() {
-  const [cart, setCart] = useState<any[]>([])
+  const [cart, setCart] = useState<
+    Array<{
+      id: number
+      name: string
+      price: number
+      image: string
+      description: string
+      quantity: number
+      totalPrice: number
+    }>
+  >([])
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('cart')
+      if (saved) setCart(JSON.parse(saved))
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   const drinks = [
     {
@@ -124,55 +143,81 @@ export default function MenuPage() {
     }
   ]
 
-  const addToCart = (product: any) => {
-    setCart([...cart, product])
-    alert(`${product.name} added to cart!`)
+  const addToCart = (product: {
+    id: number
+    name: string
+    price: number
+    image: string
+    description: string
+  }) => {
+    const item = {
+      ...product,
+      quantity: 1,
+      totalPrice: product.price,
+    }
+    const next = [...cart, item]
+    setCart(next)
+    localStorage.setItem('cart', JSON.stringify(next))
+    window.dispatchEvent(new Event('cart-change'))
   }
 
   return (
     <div className="menu-page">
-      <h1>Our Menu</h1>
-      
+      <header className="menu-hero anim-rise">
+        <h1>Our Menu</h1>
+        <p>Drinks and cakes, roasted and baked for the room you&apos;re in.</p>
+      </header>
+
       <section className="menu-section">
-        <h2>Drinks</h2>
+        <h2 className="menu-section-title">Drinks</h2>
         <div className="menu-grid">
-          {drinks.map((drink) => (
-            <div key={drink.id} className="menu-item">
-              <Link href={`/product/${drink.id}`}>
+          {drinks.map((drink, index) => (
+            <article
+              key={drink.id}
+              className="menu-item"
+              style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
+            >
+              <Link href={`/product/${drink.id}`} className="menu-item-media">
                 <img src={drink.image} alt={drink.name} />
               </Link>
               <h3>{drink.name}</h3>
               <p>{drink.description}</p>
               <p className="price">KES {drink.price}</p>
-              <button 
-                className="btn btn-add-cart"
+              <button
+                type="button"
+                className="btn btn-primary btn-add-cart"
                 onClick={() => addToCart(drink)}
               >
                 Add to Cart
               </button>
-            </div>
+            </article>
           ))}
         </div>
       </section>
 
       <section className="menu-section">
-        <h2>Cakes</h2>
+        <h2 className="menu-section-title">Cakes</h2>
         <div className="menu-grid">
-          {cakes.map((cake) => (
-            <div key={cake.id} className="menu-item">
-              <Link href={`/product/${cake.id}`}>
+          {cakes.map((cake, index) => (
+            <article
+              key={cake.id}
+              className="menu-item"
+              style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
+            >
+              <Link href={`/product/${cake.id}`} className="menu-item-media">
                 <img src={cake.image} alt={cake.name} />
               </Link>
               <h3>{cake.name}</h3>
               <p>{cake.description}</p>
               <p className="price">KES {cake.price}</p>
-              <button 
-                className="btn btn-add-cart"
+              <button
+                type="button"
+                className="btn btn-primary btn-add-cart"
                 onClick={() => addToCart(cake)}
               >
                 Add to Cart
               </button>
-            </div>
+            </article>
           ))}
         </div>
       </section>

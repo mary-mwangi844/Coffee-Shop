@@ -1,43 +1,36 @@
 'use client'
 
 import { useState } from 'react'
-import ContactCard from '@/components/ContactCard'
+import Reveal from '@/components/Reveal'
 
 const contactItems = [
-  {
-    type: 'Phone',
-    value: '0701637878',
-    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=200&h=200&fit=crop',
-    alt: 'Phone'
-  },
+  { type: 'Phone', value: '0701637878', href: 'tel:0701637878' },
   {
     type: 'Email',
     value: 'mayamwangi2004@gmail.com',
-    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=200&h=200&fit=crop',
-    alt: 'Email'
+    href: 'mailto:mayamwangi2004@gmail.com',
   },
-  {
-    type: 'Location',
-    value: 'Westlands',
-    image: 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=200&h=200&fit=crop',
-    alt: 'Location'
-  }
+  { type: 'Location', value: 'Westlands, Nairobi', href: undefined },
 ]
 
 export default function Contacts() {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' })
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: '',
+  })
+  const [submitStatus, setSubmitStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitStatus('loading')
 
     try {
-      const response = await fetch('/contacts', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
 
@@ -49,26 +42,45 @@ export default function Contacts() {
         setSubmitStatus('error')
         setTimeout(() => setSubmitStatus('idle'), 3000)
       }
-    } catch (error) {
+    } catch {
       setSubmitStatus('error')
       setTimeout(() => setSubmitStatus('idle'), 3000)
     }
   }
 
   return (
-    <>
-      <section id="contacts" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=1920&h=1080&fit=crop)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px' }}>
-        <h2 className="section-title">Contact Us</h2>
-        <p className="section-subtitle">Get in touch with us</p>
+    <div className="contact-page">
+      <section className="page-hero contact-hero">
+        <div className="page-hero-media" aria-hidden="true">
+          <img
+            src="https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=1920&h=900&fit=crop"
+            alt=""
+          />
+          <div className="page-hero-veil" />
+        </div>
+        <div className="page-hero-copy anim-rise">
+          <p className="page-kicker">Say hello</p>
+          <h1>Contact us</h1>
+          <p>Questions, catering, or a quiet table—we&apos;re here.</p>
+        </div>
+      </section>
 
-        <div className="contacts-container">
-          {contactItems.map((item) => (
-            <ContactCard key={item.type} {...item} />
+      <div className="contact-body">
+        <div className="contact-channels">
+          {contactItems.map((item, index) => (
+            <Reveal key={item.type} delay={index * 80} className="contact-channel">
+              <span className="contact-channel-type">{item.type}</span>
+              {item.href ? (
+                <a href={item.href}>{item.value}</a>
+              ) : (
+                <span>{item.value}</span>
+              )}
+            </Reveal>
           ))}
         </div>
 
-        <div className="contact-form-container">
-          <h3 className="contact-form-title">Send us a message</h3>
+        <Reveal className="contact-panel" delay={120}>
+          <h2>Send a message</h2>
           <form onSubmit={handleSubmit} className="contact-form">
             <div className="form-group">
               <label htmlFor="name">Name</label>
@@ -77,7 +89,9 @@ export default function Contacts() {
                 id="name"
                 required
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Your name"
               />
             </div>
@@ -88,7 +102,9 @@ export default function Contacts() {
                 id="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 placeholder="your@email.com"
               />
             </div>
@@ -98,23 +114,31 @@ export default function Contacts() {
                 id="message"
                 required
                 value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                placeholder="Your message"
+                onChange={(e) =>
+                  setFormData({ ...formData, message: e.target.value })
+                }
+                placeholder="How can we help?"
                 rows={5}
               />
             </div>
-            <button type="submit" className="contact-submit-btn" disabled={submitStatus === 'loading'}>
+            <button
+              type="submit"
+              className="btn btn-primary btn-auth"
+              disabled={submitStatus === 'loading'}
+            >
               {submitStatus === 'loading' ? 'Sending...' : 'Send Message'}
             </button>
             {submitStatus === 'success' && (
-              <p className="contact-success">Message sent successfully!</p>
+              <p className="contact-success">Message sent successfully.</p>
             )}
             {submitStatus === 'error' && (
-              <p className="contact-error">Failed to send message. Please try again.</p>
+              <p className="contact-error">
+                Failed to send. Please try again.
+              </p>
             )}
           </form>
-        </div>
-      </section>
-    </>
+        </Reveal>
+      </div>
+    </div>
   )
 }

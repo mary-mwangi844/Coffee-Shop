@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    identifier: '',
+    password: '',
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -16,7 +16,7 @@ export default function LoginPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     })
   }
 
@@ -28,22 +28,23 @@ export default function LoginPage() {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: formData.identifier.trim(),
+          password: formData.password,
+        }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
         localStorage.setItem('user', JSON.stringify(data.user))
-        alert('Login successful!')
+        window.dispatchEvent(new Event('auth-change'))
         router.push('/')
       } else {
         setError(data.error || 'Login failed')
       }
-    } catch (error) {
+    } catch {
       setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
@@ -52,58 +53,70 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-container">
-        <h1>Login</h1>
-        
-        {error && <p className="error-message">{error}</p>}
-        
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="email">Email *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-              placeholder="your@email.com"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="password">Password *</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-              placeholder="Enter your password"
-            />
-          </div>
-          
-          <div className="form-actions">
-            <Link href="/forgot-password" className="forgot-password">
-              Forgot Password?
+      <div className="auth-shell">
+        <aside className="auth-aside" aria-hidden="true">
+          <p className="section-eyebrow">Welcome back</p>
+          <h2>Maya&apos;s</h2>
+          <p>Email or phone. One password. Straight to your cart.</p>
+        </aside>
+        <div className="auth-container">
+          <h1>Login</h1>
+          <p className="auth-subtitle">
+            Enter your email or phone number to continue
+          </p>
+
+          {error && <p className="error-message">{error}</p>}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="identifier">Email or Phone Number</label>
+              <input
+                type="text"
+                id="identifier"
+                name="identifier"
+                value={formData.identifier}
+                onChange={handleInputChange}
+                required
+                autoComplete="username"
+                placeholder="Email or 07XXXXXXXX"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                autoComplete="current-password"
+                placeholder="Enter your password"
+              />
+            </div>
+
+            <div className="form-actions">
+              <Link href="/forgot-password" className="forgot-password">
+                Forgot Password?
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-auth btn-shine"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p>Don&apos;t have an account?</p>
+            <Link href="/signup" className="text-link">
+              Create Account
             </Link>
           </div>
-          
-          <button 
-            type="submit" 
-            className="btn btn-primary btn-auth"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-        
-        <div className="auth-footer">
-          <p>Don't have an account?</p>
-          <Link href="/signup" className="btn btn-secondary">
-            Sign Up
-          </Link>
         </div>
       </div>
     </div>
