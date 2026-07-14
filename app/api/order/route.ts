@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const coffeePrices: { [key: string]: number } = {
   'Espresso': 200,
   'Americano': 250,
@@ -22,6 +20,8 @@ function generateOrderNumber(): string {
 }
 
 export async function POST(req: Request) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   try {
     const { name, email, phone, coffeeType, quantity, deliveryOption, address } = await req.json();
 

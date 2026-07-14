@@ -1,65 +1,46 @@
-import { NextResponse } from 'next/server'
+import { getDb } from '@/lib/db'
 
-export async function POST(request: Request) {
+function generateOrderNumber(): string {
+  const timestamp = Date.now().toString(36).toUpperCase()
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase()
+  return `ORD-${timestamp}-${random}`
+}
+
+export async function POST(req: Request) {
   try {
-    const body = await request.json()
-    const { itemName, type, price, paymentMethod, paymentDetails, orderDetails, customerInfo } = body
-
-    // In a real application, you would:
-    // 1. Validate the input
-    // 2. Save to a database
-    // 3. Send confirmation email
-    // 4. Process payment based on paymentMethod (M-Pesa, credit card, bank transfer, etc.)
-    // 5. Arrange delivery if requested (bodaboda or car)
-
-    // For now, we'll just log the order and return a success response
-    console.log('New order received:', { 
-      itemName, 
-      type, 
-      price, 
-      paymentMethod, 
-      paymentDetails, 
-      orderDetails,
-      customerInfo 
-    })
-
-    // Calculate delivery fee if delivery is requested
-    let deliveryFee = 0
-    let transportMethod = 'pickup'
+    const { name, email, phone, address, paymentMethod, items, total } = await req.json()
     
-    if (orderDetails?.wantsDelivery) {
-      if (orderDetails?.transportMode === 'bodaboda') {
-        deliveryFee = 100 // KES 100 for bodaboda
-        transportMethod = 'bodaboda'
-      } else if (orderDetails?.transportMode === 'car') {
-        deliveryFee = 200 // KES 200 for car delivery
-        transportMethod = 'car'
-      }
+    const db = getDb()
+    const orderNumber = generateOrderNumber()
+    
+    // Insert order
+    const orderResult = db.prepare(
+      'INSERT INTO orders (order_number, name, email, phone, address, payment_method, total) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(orderNumber, name, email, phone, address, paymentMethod, total)
+    
+    const orderId = orderResult.lastInsertRowid as number
+    
+    // Insert order items
+    const insertItem = db.prepare(
+      'INSERT INTO order_items (order_id, product_name, quantity, price, total) VALUES (?, ?, ?, ?, ?)'
+    )
+    
+    for (const item of items) {
+      insertItem.run(orderId, item.name, item.quantity, item.price, item.totalPrice)
     }
-
-    return NextResponse.json({
-      success: true,
-      message: `Order placed successfully for ${itemName} using ${paymentMethod}`,
-      order: {
-        id: Date.now(),
-        itemName,
-        type,
-        price,
-        paymentMethod,
-        paymentDetails,
-        orderDetails,
-        customerInfo,
-        deliveryFee,
-        transportMethod,
-        totalAmount: parseInt(price.replace(/\D/g, '')) + deliveryFee,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      }
-    }, { status: 201 })
+    
+    db.close()
+    
+    return Response.json({ 
+      success: true, 
+      message: 'Order placed successfully',
+      orderNumber,
+      orderId
+    })
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to place order'
+    return Response.json({ 
+      error: 'Failed to place order',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
