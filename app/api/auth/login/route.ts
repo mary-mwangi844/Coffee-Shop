@@ -1,35 +1,5 @@
-import { getDb } from '@/lib/db'
+import { getDb, findUserByIdentifier, toPublicUser } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-
-function looksLikePhone(value: string): boolean {
-  const trimmed = value.trim()
-  if (!trimmed) return false
-  if (trimmed.includes('@')) return false
-  const digits = trimmed.replace(/\D/g, '')
-  return digits.length >= 9 && /^[\d+\s()-]+$/.test(trimmed)
-}
-
-/** Build Kenyan phone lookup variants: 07..., 2547..., +2547... */
-function phoneVariants(raw: string): string[] {
-  const digits = raw.replace(/\D/g, '')
-  const variants = new Set<string>([raw.trim(), digits])
-
-  let national = digits
-  if (digits.startsWith('254') && digits.length >= 12) {
-    national = digits.slice(3)
-  } else if (digits.startsWith('0') && digits.length >= 10) {
-    national = digits.slice(1)
-  }
-
-  if (national.length >= 9) {
-    variants.add(national)
-    variants.add(`0${national}`)
-    variants.add(`254${national}`)
-    variants.add(`+254${national}`)
-  }
-
-  return Array.from(variants)
-}
 
 export async function POST(req: Request) {
   try {
@@ -45,23 +15,9 @@ export async function POST(req: Request) {
     }
 
     const db = getDb()
-    let user: Record<string, unknown> | undefined
+    const user = findUserByIdentifier(db, identifier)
 
-    if (looksLikePhone(identifier)) {
-      const variants = phoneVariants(identifier)
-      const placeholders = variants.map(() => '?').join(', ')
-      user = db
-        .prepare(
-          `SELECT * FROM users WHERE phone IN (${placeholders}) OR email = ?`
-        )
-        .get(...variants, identifier) as Record<string, unknown> | undefined
-    } else {
-      user = db
-        .prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE')
-        .get(identifier) as Record<string, unknown> | undefined
-    }
-
-    if (!user) {
+    if (!user || !user.password) {
       db.close()
       return Response.json(
         { error: 'Invalid email or password' },
@@ -82,14 +38,13 @@ export async function POST(req: Request) {
       )
     }
 
-    const { password: _, ...userWithoutPassword } = user
-
+    const publicUser = toPublicUser(user)
     db.close()
 
     return Response.json({
       success: true,
       message: 'Login successful',
-      user: userWithoutPassword,
+      user: publicUser,
     })
   } catch (error) {
     return Response.json(

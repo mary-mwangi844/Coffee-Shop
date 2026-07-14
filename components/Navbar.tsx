@@ -3,40 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
-type StoredUser = {
-  first_name?: string
-  firstName?: string
-  email?: string
-}
-
-type CartItem = {
-  quantity?: number
-}
-
-function readUser(): StoredUser | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = localStorage.getItem('user')
-    if (!raw) return null
-    return JSON.parse(raw) as StoredUser
-  } catch {
-    return null
-  }
-}
-
-function readCartCount(): number {
-  if (typeof window === 'undefined') return 0
-  try {
-    const raw = localStorage.getItem('cart')
-    if (!raw) return 0
-    const items = JSON.parse(raw) as CartItem[]
-    if (!Array.isArray(items)) return 0
-    return items.reduce((sum, item) => sum + (item.quantity || 1), 0)
-  } catch {
-    return 0
-  }
-}
+import { cartCount, readCart, readUser, type StoredUser } from '@/lib/cart'
 
 function CartIcon() {
   return (
@@ -69,14 +36,14 @@ const links = [
 export default function Navbar() {
   const pathname = usePathname()
   const [user, setUser] = useState<StoredUser | null>(null)
-  const [cartCount, setCartCount] = useState(0)
+  const [count, setCount] = useState(0)
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
     const sync = () => {
       setUser(readUser())
-      setCartCount(readCartCount())
+      setCount(cartCount(readCart()))
     }
     sync()
     window.addEventListener('storage', sync)
@@ -101,7 +68,9 @@ export default function Navbar() {
   }, [pathname])
 
   return (
-    <header className={`site-header ${scrolled ? 'is-scrolled' : ''} ${open ? 'is-open' : ''}`}>
+    <header
+      className={`site-header ${scrolled ? 'is-scrolled' : ''} ${open ? 'is-open' : ''}`}
+    >
       <nav className="navbar" aria-label="Primary">
         <Link href="/" className="logo" onClick={() => setOpen(false)}>
           <span className="logo-mark">M</span>
@@ -134,23 +103,35 @@ export default function Navbar() {
               </Link>
             </li>
           ))}
-          {user ? (
+          {user && (
             <li>
               <Link
-                href="/cart"
-                className="nav-cart"
-                aria-label={`Shopping cart${cartCount ? `, ${cartCount} items` : ''}`}
+                href="/account"
+                className={pathname.startsWith('/account') ? 'is-active' : undefined}
                 onClick={() => setOpen(false)}
               >
-                <CartIcon />
-                {cartCount > 0 && (
-                  <span className="nav-cart-badge">{cartCount}</span>
-                )}
+                Account
               </Link>
             </li>
-          ) : (
+          )}
+          <li>
+            <Link
+              href="/cart"
+              className="nav-cart"
+              aria-label={`Shopping cart${count ? `, ${count} items` : ''}`}
+              onClick={() => setOpen(false)}
+            >
+              <CartIcon />
+              {count > 0 && <span className="nav-cart-badge">{count}</span>}
+            </Link>
+          </li>
+          {!user && (
             <li>
-              <Link href="/login" className="nav-login" onClick={() => setOpen(false)}>
+              <Link
+                href="/login"
+                className="nav-login"
+                onClick={() => setOpen(false)}
+              >
                 Login
               </Link>
             </li>
