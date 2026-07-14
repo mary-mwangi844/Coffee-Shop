@@ -1,66 +1,88 @@
+'use client'
+
+import Reveal from '@/components/Reveal'
+
+const values = [
+  {
+    title: 'Quality',
+    text: 'We never compromise on the coffee or the ingredients that meet it.',
+  },
+  {
+    title: 'Community',
+    text: 'A welcoming room for work, friendship, and quiet mornings.',
+  },
+  {
+    title: 'Sustainability',
+    text: 'Ethical sourcing and practices that respect growers and place.',
+  },
+  {
+    title: 'Craft',
+    text: 'We keep refining roast profiles and brewing technique.',
+  },
+]
+
 export default function AboutPage() {
   return (
     <div className="about-page">
-      <div className="about-hero">
-        <div className="about-background">
-          <img src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1200&h=600&fit=crop" alt="Coffee Shop Background" />
+      <section className="page-hero about-hero">
+        <div className="page-hero-media" aria-hidden="true">
+          <img
+            src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1920&h=900&fit=crop"
+            alt=""
+          />
+          <div className="page-hero-veil" />
         </div>
-        <div className="about-content">
-          <h1>About Maya's Coffee Shop</h1>
+        <div className="page-hero-copy anim-rise">
+          <p className="page-kicker">Our house</p>
+          <h1>Maya&apos;s Coffee Shop</h1>
           <p>Where every cup tells a story</p>
         </div>
-      </div>
-      
-      <div className="about-section">
-        <div className="about-text">
-          <h2>Our Story</h2>
+      </section>
+
+      <div className="about-body">
+        <Reveal className="about-block">
+          <h2>Our story</h2>
           <p>
-            Welcome to Maya's Coffee Shop, a cozy haven for coffee enthusiasts in the heart of Westlands. 
-            Founded with a passion for bringing the finest coffee experiences to our community, we believe 
-            that every cup of coffee should be a moment to savor and enjoy.
+            Welcome to Maya&apos;s Coffee Shop, a calm corner for coffee in
+            Westlands. We started with a simple wish: a place where people can
+            step out of the rush and sit with a carefully made cup.
           </p>
           <p>
-            Our journey began with a simple dream: to create a space where people could escape the hustle 
-            and bustle of everyday life and indulge in the art of coffee. We source our beans from the most 
-            renowned coffee-growing regions, ensuring that each sip delivers the perfect balance of flavor, 
-            aroma, and freshness.
+            We source from growers who share that care, roasting for flavour,
+            aroma, and freshness—then serving it in a room that feels like it
+            was made for lingering.
           </p>
+        </Reveal>
+
+        <Reveal className="about-block" delay={80}>
+          <h2>Our mission</h2>
           <p>
-            At Maya's Coffee Shop, we're more than just a coffee destination – we're a community. Whether 
-            you're here to work, catch up with friends, or simply enjoy a quiet moment with your favorite 
-            brew, our warm and inviting atmosphere makes every visit special.
+            To serve exceptional coffee and memorable moments—cup by cup—while
+            supporting fair trade and the people who grow what we brew.
           </p>
-        </div>
-        
-        <div className="about-mission">
-          <h2>Our Mission</h2>
-          <p>
-            To serve the highest quality coffee and create memorable experiences for every customer, 
-            one cup at a time. We are committed to sustainability, fair trade practices, and supporting 
-            local farmers who share our passion for exceptional coffee.
-          </p>
-        </div>
-        
-        <div className="about-values">
-          <h2>Our Values</h2>
-          <div className="values-grid">
-            <div className="value-card">
-              <h3>Quality</h3>
-              <p>We never compromise on the quality of our coffee and ingredients.</p>
-            </div>
-            <div className="value-card">
-              <h3>Community</h3>
-              <p>We foster a welcoming space for everyone who walks through our doors.</p>
-            </div>
-            <div className="value-card">
-              <h3>Sustainability</h3>
-              <p>We're committed to environmentally friendly practices and ethical sourcing.</p>
-            </div>
-            <div className="value-card">
-              <h3>Innovation</h3>
-              <p>We continuously explore new flavors and brewing techniques.</p>
-            </div>
-          </div>
+        </Reveal>
+
+        <Reveal>
+          <header className="section-head">
+            <h2>What we stand for</h2>
+            <p>Four promises we keep every day on the floor.</p>
+          </header>
+        </Reveal>
+
+        <div className="values-list">
+          {values.map((value, index) => (
+            <Reveal
+              key={value.title}
+              className="value-row"
+              delay={index * 80}
+            >
+              <span className="feature-index">0{index + 1}</span>
+              <div>
+                <h3>{value.title}</h3>
+                <p>{value.text}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </div>
