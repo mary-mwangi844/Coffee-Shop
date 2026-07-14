@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginForm() {
   const [formData, setFormData] = useState({
     identifier: '',
     password: '',
@@ -12,6 +13,20 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const oauthError = searchParams.get('oauth_error')
+    if (oauthError) setError(oauthError)
+    const next = searchParams.get('next')
+    if (next && next.startsWith('/') && !next.startsWith('//')) {
+      try {
+        sessionStorage.setItem('loginNext', next)
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [searchParams])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -40,7 +55,10 @@ export default function LoginPage() {
       if (response.ok) {
         localStorage.setItem('user', JSON.stringify(data.user))
         window.dispatchEvent(new Event('auth-change'))
-        router.push('/')
+        const next = searchParams.get('next')
+        const safeNext =
+          next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
+        router.push(safeNext)
       } else {
         setError(data.error || 'Login failed')
       }
@@ -57,7 +75,7 @@ export default function LoginPage() {
         <aside className="auth-aside" aria-hidden="true">
           <p className="section-eyebrow">Welcome back</p>
           <h2>Maya&apos;s</h2>
-          <p>Email or phone. One password. Straight to your cart.</p>
+          <p>Email, phone, or continue with Google / Facebook.</p>
         </aside>
         <div className="auth-container">
           <h1>Login</h1>
@@ -66,6 +84,25 @@ export default function LoginPage() {
           </p>
 
           {error && <p className="error-message">{error}</p>}
+
+          <div className="oauth-row">
+            <a
+              href={`/api/auth/oauth/google${searchParams.get('next') ? `?next=${encodeURIComponent(searchParams.get('next')!)}` : ''}`}
+              className="oauth-btn oauth-google"
+            >
+              Continue with Google
+            </a>
+            <a
+              href={`/api/auth/oauth/facebook${searchParams.get('next') ? `?next=${encodeURIComponent(searchParams.get('next')!)}` : ''}`}
+              className="oauth-btn oauth-facebook"
+            >
+              Continue with Facebook
+            </a>
+          </div>
+
+          <div className="auth-divider">
+            <span>or</span>
+          </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
@@ -120,5 +157,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="auth-page" />}>
+      <LoginForm />
+    </Suspense>
   )
 }

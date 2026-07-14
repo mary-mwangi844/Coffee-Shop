@@ -3,17 +3,27 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import {
+  cartSubtotal,
+  clearCart,
+  readCart,
+  readUser,
+  type CartItem,
+  type StoredUser,
+} from '@/lib/cart'
 
-type CartItem = {
-  name: string
-  quantity: number
-  totalPrice: number
+function userDisplayName(user: StoredUser) {
+  const first = user.first_name || user.firstName || ''
+  const last = user.last_name || user.lastName || ''
+  return `${first} ${last}`.trim()
 }
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([])
+  const [user, setUser] = useState<StoredUser | null>(null)
   const [ready, setReady] = useState(false)
   const [status, setStatus] = useState('')
+  const [mpesaPhone, setMpesaPhone] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -25,14 +35,22 @@ export default function CheckoutPage() {
   const router = useRouter()
 
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem('cart')
-      if (savedCart) setCart(JSON.parse(savedCart))
-    } catch {
-      /* ignore */
+    const stored = readUser()
+    if (!stored) {
+      router.replace('/login?next=/checkout')
+      return
     }
+    setUser(stored)
+    setCart(readCart())
+    setFormData((prev) => ({
+      ...prev,
+      name: userDisplayName(stored) || prev.name,
+      email: stored.email || prev.email,
+      phone: stored.phone || prev.phone,
+    }))
+    setMpesaPhone(stored.phone || '')
     setReady(true)
-  }, [])
+  }, [router])
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -45,8 +63,31 @@ export default function CheckoutPage() {
     })
   }
 
-  const calculateTotal = () =>
-    cart.reduce((total, item) => total + item.totalPrice, 0) + 100
+  const subtotal = cartSubtotal(cart)
+  const total = subtotal + 100
+
+  const placeOrder = async (extra: {
+    status: string
+    paymentRef?: string
+  }) => {
+    const response = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...formData,
+        userId: user?.id,
+        items: cart,
+        total,
+        status: extra.status,
+        paymentRef: extra.paymentRef,
+      }),
+    })
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to place order')
+    }
+    return data as { orderNumber: string }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,28 +95,60 @@ export default function CheckoutPage() {
     setStatus('')
 
     try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          items: cart,
-          total: calculateTotal(),
-        }),
-      })
+      let orderStatus = 'pending'
+      let paymentRef: string | undefined
 
-      const data = await response.json()
-
-      if (response.ok) {
-        localStorage.removeItem('cart')
-        window.dispatchEvent(new Event('cart-change'))
-        setStatus('Order placed successfully. Redirecting…')
-        setTimeout(() => router.push('/'), 900)
+      if (formData.paymentMethod === 'mpesa') {
+        setStatus('Sending M-Pesa STK push…')
+        const payRes = await fetch('/api/payments/mpesa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: mpesaPhone || formData.phone,
+            amount: total,
+          }),
+        })
+        const payData = await payRes.json()
+        if (!payRes.ok) {
+          throw new Error(payData.error || 'M-Pesa payment failed')
+        }
+        paymentRef = payData.paymentRef
+        orderStatus = 'confirmed'
+        setStatus('Payment confirmed. Placing order…')
+      } else if (formData.paymentMethod === 'cash') {
+        orderStatus = 'pending'
       } else {
-        setStatus(data.error || 'Failed to place order')
+        orderStatus = 'awaiting_payment'
       }
-    } catch {
-      setStatus('Error placing order. Please try again.')
+
+      const data = await placeOrder({ status: orderStatus, paymentRef })
+
+      try {
+        sessionStorage.setItem(
+          `order-snapshot-${data.orderNumber}`,
+          JSON.stringify({
+            orderNumber: data.orderNumber,
+            items: cart,
+            address: formData.address,
+            paymentMethod: formData.paymentMethod,
+            status: orderStatus,
+            total,
+            paymentRef,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+          })
+        )
+      } catch {
+        /* ignore */
+      }
+
+      clearCart()
+      router.push(`/order/confirmation?order=${encodeURIComponent(data.orderNumber)}`)
+    } catch (err) {
+      setStatus(
+        err instanceof Error ? err.message : 'Error placing order. Please try again.'
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -99,16 +172,23 @@ export default function CheckoutPage() {
     )
   }
 
+  const payLabel =
+    formData.paymentMethod === 'mpesa'
+      ? 'Pay with M-Pesa'
+      : formData.paymentMethod === 'cash'
+        ? 'Place order (Cash on delivery)'
+        : 'Place order'
+
   return (
     <div className="checkout-page">
       <header className="page-intro anim-rise">
         <h1>Checkout</h1>
-        <p>Confirm details and place your order.</p>
+        <p>Delivery details and payment — same flow as a national storefront.</p>
       </header>
 
       <div className="checkout-container">
         <form className="checkout-form anim-rise" onSubmit={handleSubmit}>
-          <h2>Customer information</h2>
+          <h2>Delivery</h2>
 
           <div className="form-group">
             <label htmlFor="name">Full Name *</label>
@@ -155,15 +235,16 @@ export default function CheckoutPage() {
               onChange={handleInputChange}
               required
               rows={3}
+              placeholder="Estate, building, gate code…"
             />
           </div>
 
-          <h2>Payment method</h2>
+          <h2>Payment</h2>
           <div className="payment-options">
             {[
-              { value: 'mpesa', label: 'M-Pesa' },
-              { value: 'cash', label: 'Cash' },
-              { value: 'card', label: 'Card' },
+              { value: 'mpesa', label: 'M-Pesa', hint: 'STK prompt on your phone' },
+              { value: 'cash', label: 'Cash on delivery', hint: 'Pay the rider' },
+              { value: 'card', label: 'Card', hint: 'Pay at counter for now' },
             ].map((option) => (
               <label key={option.value} className="payment-option">
                 <input
@@ -173,10 +254,37 @@ export default function CheckoutPage() {
                   checked={formData.paymentMethod === option.value}
                   onChange={handleInputChange}
                 />
-                <span className="payment-label">{option.label}</span>
+                <span className="payment-label">
+                  <strong>{option.label}</strong>
+                  <em>{option.hint}</em>
+                </span>
               </label>
             ))}
           </div>
+
+          {formData.paymentMethod === 'mpesa' && (
+            <div className="form-group mpesa-panel">
+              <label htmlFor="mpesaPhone">M-Pesa phone *</label>
+              <input
+                type="tel"
+                id="mpesaPhone"
+                value={mpesaPhone}
+                onChange={(e) => setMpesaPhone(e.target.value)}
+                required
+                placeholder="07XXXXXXXX or 2547XXXXXXXX"
+              />
+              <p className="field-hint">
+                You’ll get a simulated Safaricom prompt, then we confirm payment.
+              </p>
+            </div>
+          )}
+
+          {formData.paymentMethod === 'card' && (
+            <p className="field-hint">
+              Card checkout is not live yet — we’ll mark the order as awaiting
+              payment so you can settle at pickup or on delivery.
+            </p>
+          )}
 
           {status && <p className="checkout-status">{status}</p>}
 
@@ -185,7 +293,7 @@ export default function CheckoutPage() {
             className="btn btn-primary btn-place-order"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Processing...' : 'Place Order'}
+            {isSubmitting ? 'Processing…' : payLabel}
           </button>
 
           <Link href="/cart" className="btn btn-secondary">
@@ -197,7 +305,7 @@ export default function CheckoutPage() {
           <h2>Order summary</h2>
           <div className="summary-items">
             {cart.map((item, index) => (
-              <div key={index} className="summary-item">
+              <div key={`${item.id}-${index}`} className="summary-item">
                 <span>
                   {item.name} ×{item.quantity}
                 </span>
@@ -207,9 +315,7 @@ export default function CheckoutPage() {
           </div>
           <div className="summary-row">
             <span>Subtotal</span>
-            <span>
-              KES {cart.reduce((total, item) => total + item.totalPrice, 0)}
-            </span>
+            <span>KES {subtotal}</span>
           </div>
           <div className="summary-row">
             <span>Delivery</span>
@@ -217,7 +323,7 @@ export default function CheckoutPage() {
           </div>
           <div className="summary-row total">
             <span>Total</span>
-            <span>KES {calculateTotal()}</span>
+            <span>KES {total}</span>
           </div>
         </aside>
       </div>

@@ -7,14 +7,28 @@ export default function ForgotPasswordPage() {
   const [identifier, setIdentifier] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [warning, setWarning] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Placeholder: no email/SMS delivery in this pass
-    await new Promise((resolve) => setTimeout(resolve, 400))
-    setSubmitted(true)
-    setIsLoading(false)
+    setWarning('')
+
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: identifier.trim() }),
+      })
+      const data = await response.json()
+      if (data.warning) setWarning(data.warning)
+      setSubmitted(true)
+    } catch {
+      setWarning('Could not send reset instructions. Please try again.')
+      setSubmitted(true)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -22,7 +36,8 @@ export default function ForgotPasswordPage() {
       <div className="auth-container">
         <h1>Forgot Password</h1>
         <p className="auth-subtitle">
-          Enter the email or phone number linked to your account
+          Enter the email or phone number linked to your account. We&apos;ll send
+          a reset link by email (or SMS if configured).
         </p>
 
         {submitted ? (
@@ -31,6 +46,12 @@ export default function ForgotPasswordPage() {
               If an account exists for <strong>{identifier.trim()}</strong>,
               you will receive password reset instructions shortly.
             </p>
+            {warning && (
+              <p className="contact-error">
+                Delivery note: {warning}. Check RESEND_API_KEY / Africa&apos;s
+                Talking env vars if nothing arrives.
+              </p>
+            )}
             <Link href="/login" className="btn btn-primary btn-auth">
               Back to Login
             </Link>
@@ -56,7 +77,7 @@ export default function ForgotPasswordPage() {
               className="btn btn-primary btn-auth"
               disabled={isLoading}
             >
-              {isLoading ? 'Sending...' : 'Reset Password'}
+              {isLoading ? 'Sending...' : 'Send Reset Link'}
             </button>
           </form>
         )}

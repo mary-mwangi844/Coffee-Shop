@@ -3,20 +3,14 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-
-type CartItem = {
-  id: number
-  name: string
-  price: number
-  image: string
-  quantity: number
-  totalPrice: number
-}
-
-function persistCart(next: CartItem[]) {
-  localStorage.setItem('cart', JSON.stringify(next))
-  window.dispatchEvent(new Event('cart-change'))
-}
+import {
+  cartSubtotal,
+  readCart,
+  readUser,
+  removeCartItem,
+  updateCartQuantity,
+  type CartItem,
+} from '@/lib/cart'
 
 export default function CartPage() {
   const [cart, setCart] = useState<CartItem[]>([])
@@ -24,38 +18,26 @@ export default function CartPage() {
   const router = useRouter()
 
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem('cart')
-      if (savedCart) setCart(JSON.parse(savedCart))
-    } catch {
-      /* ignore */
-    }
+    setCart(readCart())
     setReady(true)
   }, [])
 
   const updateQuantity = (index: number, newQuantity: number) => {
-    if (newQuantity < 1) return
-    const updatedCart = [...cart]
-    updatedCart[index] = {
-      ...updatedCart[index],
-      quantity: newQuantity,
-      totalPrice: updatedCart[index].price * newQuantity,
-    }
-    setCart(updatedCart)
-    persistCart(updatedCart)
+    setCart(updateCartQuantity(index, newQuantity))
   }
 
   const removeItem = (index: number) => {
-    const updatedCart = cart.filter((_, i) => i !== index)
-    setCart(updatedCart)
-    persistCart(updatedCart)
+    setCart(removeCartItem(index))
   }
 
-  const calculateTotal = () =>
-    cart.reduce((total, item) => total + item.totalPrice, 0)
+  const subtotal = cartSubtotal(cart)
 
   const handleCheckout = () => {
     if (cart.length === 0) return
+    if (!readUser()) {
+      router.push('/login?next=/checkout')
+      return
+    }
     router.push('/checkout')
   }
 
@@ -81,7 +63,9 @@ export default function CartPage() {
     <div className="cart-page">
       <header className="page-intro anim-rise">
         <h1>Your cart</h1>
-        <p>{cart.length} item{cart.length === 1 ? '' : 's'} ready to order.</p>
+        <p>
+          {cart.length} item{cart.length === 1 ? '' : 's'} ready to order.
+        </p>
       </header>
 
       <div className="cart-container">
@@ -134,7 +118,7 @@ export default function CartPage() {
           <h2>Order summary</h2>
           <div className="summary-row">
             <span>Subtotal</span>
-            <span>KES {calculateTotal()}</span>
+            <span>KES {subtotal}</span>
           </div>
           <div className="summary-row">
             <span>Delivery</span>
@@ -142,7 +126,7 @@ export default function CartPage() {
           </div>
           <div className="summary-row total">
             <span>Total</span>
-            <span>KES {calculateTotal() + 100}</span>
+            <span>KES {subtotal + 100}</span>
           </div>
           <button
             type="button"
