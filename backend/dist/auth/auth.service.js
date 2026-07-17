@@ -38,7 +38,7 @@ let AuthService = class AuthService {
         return this.issueToken(user);
     }
     async login(input) {
-        const email = input.email.trim().toLowerCase();
+        const email = input.identifier.trim().toLowerCase();
         const user = await this.prisma.user.findUnique({ where: { email } });
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid email or password');
@@ -47,6 +47,7 @@ let AuthService = class AuthService {
         if (!valid) {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
+        console.log(`User logged in: ${user.email}`);
         return this.issueToken(user);
     }
     async me(userId) {

@@ -21,8 +21,9 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body);
+login(@Body() body: { identifier: string; password: string }) {
+  return this.authService.login(body);
+
   }
 
   @UseGuards(AuthGuard('jwt'))

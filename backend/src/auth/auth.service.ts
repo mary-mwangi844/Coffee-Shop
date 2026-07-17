@@ -16,9 +16,10 @@ type RegisterInput = {
 };
 
 type LoginInput = {
-  email: string;
+  identifier: string;
   password: string;
 };
+
 
 @Injectable()
 export class AuthService {
@@ -49,8 +50,8 @@ export class AuthService {
   }
 
   async login(input: LoginInput) {
-    const email = input.email.trim().toLowerCase();
-    const user = await this.prisma.user.findUnique({ where: { email } });
+  const email = input.identifier.trim().toLowerCase();
+  const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -60,6 +61,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+ console.log(`User logged in: ${user.email}`);
     return this.issueToken(user);
   }
 

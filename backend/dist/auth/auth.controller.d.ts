@@ -19,7 +19,7 @@ export declare class AuthController {
         };
     }>;
     login(body: {
-        email: string;
+        identifier: string;
         password: string;
     }): Promise<{
         accessToken: string;

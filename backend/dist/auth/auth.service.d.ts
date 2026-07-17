@@ -8,7 +8,7 @@ type RegisterInput = {
     phone?: string;
 };
 type LoginInput = {
-    email: string;
+    identifier: string;
     password: string;
 };
 export declare class AuthService {
