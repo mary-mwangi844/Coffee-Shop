@@ -129,10 +129,6 @@ function timelineStep(chip: string): number {
 
 const SIDEBAR: { id: NavId; label: string; count?: boolean }[] = [
   { id: 'orders', label: 'Orders', count: true },
-  { id: 'inbox', label: 'Inbox' },
-  { id: 'reviews', label: 'Pending Reviews' },
-  { id: 'wishlist', label: 'Saved items' },
-  { id: 'addresses', label: 'Address Book' },
   { id: 'details', label: 'Account Details' },
 ]
 
